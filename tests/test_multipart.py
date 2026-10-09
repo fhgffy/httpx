@@ -175,6 +175,26 @@ def test_multipart_file_tuple_headers(file_content_type: str | None) -> None:
     )
 
 
+@pytest.mark.parametrize("file_headers", [{}, {"Expires": "0"}])
+def test_multipart_reuses_file_headers_without_changing_content_type(
+    file_headers: dict[str, str],
+) -> None:
+    # 2026-10-10: Reused upload headers must not retain another file's MIME type.
+    original_headers = file_headers.copy()
+    contents = []
+    for filename in ["first.txt", "second.json"]:
+        request = httpx.Request(
+            "POST",
+            "https://www.example.com/",
+            files={"file": (filename, b"content", None, file_headers)},
+        )
+        contents.append(request.read())
+
+    assert b"Content-Type: text/plain\r\n" in contents[0]
+    assert b"Content-Type: application/json\r\n" in contents[1]
+    assert file_headers == original_headers
+
+
 def test_multipart_headers_include_content_type() -> None:
     """
     Content-Type from 4th tuple parameter (headers) should

@@ -141,6 +141,8 @@ class FileField:
             else:
                 # all 4 parameters included
                 filename, fileobj, content_type, headers = value  # type: ignore
+                # 2026-10-10: Keep inferred headers local to this upload.
+                headers = dict(headers)
         else:
             filename = Path(str(getattr(value, "name", "upload"))).name
             fileobj = value
